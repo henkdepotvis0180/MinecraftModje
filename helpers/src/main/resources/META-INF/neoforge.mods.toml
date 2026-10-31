@@ -1,0 +1,20 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="All Rights Reserved"
+[[mods]]
+modId="henkhelpers"
+version="0.1.0"
+displayName="Henk Helpers"
+description='''Werkers voor Henk Frontier, met lokale Ollama-opdrachten.'''
+[[dependencies.henkhelpers]]
+modId="neoforge"
+type="required"
+versionRange="[21.1.172,21.2)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.henkhelpers]]
+modId="minecraft"
+type="required"
+versionRange="[1.21.1]"
+ordering="NONE"
+side="BOTH"

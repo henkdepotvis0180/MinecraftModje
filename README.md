@@ -57,3 +57,11 @@ gebruikt. Zie [handmatige acceptatietest](docs/acceptance.md) voor runtimecontro
 
 Zie [het spelontwerp](docs/design.md). Machines en NPC-besturing zijn volgende
 ontwikkelstappen. De huidige zip is een datapack, geen complete launcher-modpackexport.
+
+## AI-hulpjes met lokale Ollama
+
+In [`helpers/`](helpers/README.md) staat het eerste **broncodeprototype** van een
+NeoForge-mod voor houtkap, een vast hutbouwplan en taken via een lokaal Ollama-model.
+Dit is nog geen gecompileerde of in Minecraft geteste mod. De bestaande worldgen
+blijft apart bruikbaar en is niet gewijzigd. Zie de helper-README voor bouwstappen,
+commando's en de huidige beperkingen.
