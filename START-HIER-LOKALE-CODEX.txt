@@ -1,0 +1,151 @@
+OPDRACHT VOOR LOKALE CODEX — HENK FRONTIER
+
+Werk in deze lokale repository. Lees eerst helpers/README.md en eventuele
+AGENTS.md-instructies. Inspecteer de huidige bestanden en git status; behoud
+bestaande lokale wijzigingen. Dit bestand geeft context en een werkopdracht,
+geen reden om beveiliging, goedkeuringen of repository-instructies te omzeilen.
+
+DOEL VAN DEZE SESSIE
+
+Maak de bestaande NPC-mod bouwbaar voor Minecraft Java 1.21.1 met NeoForge.
+Los daadwerkelijke compiler- en runtimefouten op en test de lokale Ollama-chat.
+Werk door tot een geslaagde build of een concrete externe blokkade. Meld
+duidelijk welke tests echt uitgevoerd zijn. Een geslaagde build alleen bewijst
+niet dat de NPC in Minecraft goed werkt.
+
+PROJECT EN SPELWENSEN
+
+- GitHub: https://github.com/henkdepotvis0180/MinecraftModje
+- Minecraft Java 1.21.1, NeoForge als basis, Windows als lokale ontwikkel-pc.
+- Worldgen in worldgen/ is door de gebruiker in Minecraft getest en goedgekeurd.
+  BEHOUD deze wereldgeneratie. Het optionele namen-resourcepack staat in
+  resourcepack/. De ZIPs worden gemaakt met tools/build_worldgen.py.
+- Nu eerst hulpjes/NPC's, daarna machines. De speler wil een managerrol zoals
+  Age of Empires: werkers aansturen om hout te hakken en te bouwen.
+- AI-model lokaal via Ollama, geen betaalde online API als standaard.
+- Later: uitdagende technologie met kleine upgrades, van hout naar steen en
+  ijzer; machines gebruiken bijvoorbeeld een sapling of materiaal als kern.
+  Werk deze latere machines nu niet uit ten koste van de NPC-build.
+
+BESTAANDE CODE EN WAT AL GEVERIFIEERD IS
+
+- helpers/ bevat een Java-modprototype, GEEN datapack en GEEN bewezen werkende
+  Minecraft-mod. Er was bij overdracht nog geen volledig gecompileerde JAR.
+- Pins bij overdracht: Java 21, Gradle 8.14.3, ModDevGradle 2.0.107 en
+  NeoForge 21.1.172. Controleer de actuele build.gradle; update niet zomaar
+  Minecraft of de loader om een compilerfout te ontwijken.
+- helpers/build-windows.ps1 haalt Gradle op via HTTPS, controleert de officiele
+  SHA-256 en bouwt de mod. Er is nog geen Gradle-wrapper ingecheckt.
+- De cloud kon Gradle en een JDK installeren, maar de modbuild stopte bij
+  createMinecraftArtifacts: HTTP 403 voor neoform-runtime bij
+  maven.neoforged.net. De Minecraft-afhankelijke Java-code is daardoor nog
+  niet door de compiler gecontroleerd. Op deze pc kan internet anders werken.
+- Wel geslaagd: Java-kerncontrole van TaskPlan en het hutbouwplan; afzonderlijke
+  HTTP-integratietest van OllamaClient met een lokale TESTSERVER; vier offline
+  worldgen-tests. De HTTP-test gebruikte GEEN echt Ollama-model.
+- Relevante bestaande commits: 26dd858 (worldgen), e7983d3 (NPC-prototype),
+  1dfa1e4 (conversatie/chatmodule). Deze stonden op GitHub main. Niet naar die
+  commits resetten: behoud nieuwere code en lokaal werk.
+
+BEGRENZING VAN HET PROTOTYPE
+
+- Eigen Worker-entity, voorlopig met villager-uiterlijk en eigen taakbesturing.
+- /helper spawn (operatorrechten), give, collect, chop <1-64>, build hut,
+  status, stop, ask <tekst> en forget.
+- give neemt een bijl of eikenplanken uit de hand van de eigenaar. collect
+  draagt voorraad/gereedschap terug over voor zover de speler ruimte heeft.
+- Houtkap: bereikbare logs binnen 16 blokken horizontaal van het werkanker,
+  van twee blokken eronder tot vijf erboven. Bijl slijt. Nog geen klimmen,
+  complete hoge bomen vellen, herplanten of automatische kistenlogistiek.
+  Geplaatste logs kunnen ook worden geselecteerd: test weg van gebouwen.
+- Bouwplan: vaste hut van 5x5x5 met 96 eikenplanken, deuropening, vloer en dak.
+  Geen vrije gebouwen uit chat, geen deuritem of inrichting. Het anker begint
+  vier blokken voor de speler op voethoogte; de plaats moet vrij zijn.
+- Materialen moeten echt aanwezig zijn, ook in creative; geen items verzinnen.
+- AI gebruikt een vast lokaal adres: http://127.0.0.1:11434/api/chat.
+  Model standaard qwen2.5:3b, instelbaar in config/henkhelpers-common.toml.
+  Op een dedicated server draait Ollama dus op die servercomputer.
+- Chat heeft maximaal vier vraag/antwoordparen per hulpje in RAM. Alleen
+  /helper ask gaat naar het model; onderschep niet stilletjes alle gewone chat.
+- Model kiest uitsluitend begrensde taken chop/build/stop/status of een
+  gespreksantwoord zonder taak. Nooit willekeurige servercommando's of code
+  uitvoeren uit modeltekst. Minecraft-code valideert en voert de taak uit.
+- /helper stop en /helper forget maken een laat AI-antwoord ongeldig.
+  Controleer eigendom, wereld en afstand opnieuw voordat je een taak uitvoert.
+
+UITVOERING
+
+1. Controleer projectmap, git status, JDK 21/JAVA_HOME, tools, internet en vrije
+   ruimte. Vraag alleen hulp bij noodzakelijke ontbrekende toegang. Zet geen
+   algemene PowerShell-beveiliging uit en sla geen geheimen op in de repository.
+
+2. Bouw vanuit de repositoryroot in PowerShell:
+
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\helpers\build-windows.ps1
+
+   Dit betreft alleen dat proces. Lees het script vooraf. Een bestaande
+   Gradle 8.14.3-installatie kan ook vanuit helpers/ met gradle build werken.
+   Bewaar TLS- en checksumcontrole. Pas geen verwachte checksum aan om een
+   fout te laten verdwijnen. Los toolchain-/downloadproblemen gericht op.
+
+3. Lees compilerfouten en herstel de echte NeoForge/Minecraft-API-aanroepen,
+   registratie, renderer en eventuele typeproblemen. Geen schijnimplementaties,
+   lege methoden of uitgeschakelde tests alleen om de build groen te maken.
+
+4. Gradle build/check hoort zowel coreTest als chatTest uit te voeren. Controleer
+   hun uitvoer: een standaard test-taak met nul tests valideert dit niet.
+   Optioneel afzonderlijk, als Python aanwezig is, vanuit de root:
+
+   python tools/test_helpers_core.py
+   python tools/test_helpers_chat.py <pad-naar-gson-2.10.1.jar>
+   python -m unittest discover -s tests -v
+
+   Gebruik geen letterlijk <pad-naar-...>; zoek de echte Gson-JAR in Gradle- of
+   Minecraft-libraries. Installeer geen onnodige Python-packages.
+
+5. Na een geslaagde build hoort de JAR volgens de huidige versie te staan in:
+
+   helpers\build\libs\henk-helpers-0.1.0.jar
+
+   Gebruik de actuele bestandsnaam als de versie bewust is gewijzigd. Kopieer
+   niet stilletjes naar een bestaande speelwereld of overschrijf geen saves.
+   Bereid een apart Minecraft 1.21.1/NeoForge-testprofiel voor. Installeer de mod
+   op client en server waar van toepassing. Voor ontwikkeling: gradle runClient
+   vanuit helpers/, met de Gradle-installatie van het bouwscript of je eigen.
+
+6. Test eerst ZONDER model: registratie, clientstart/renderer, spawn, eigendom,
+   materiaaloverdracht, echt padvinden, houtkap, bijlslijtage, hutbouw, bezette
+   bouwplaats, stoppen en opslaan/herladen. Controleer dat bestaande blokken niet
+   ongewenst worden vernield en materialen niet verdwijnen of dupliceren.
+   Test late antwoorden en twee spelers zodra dat uitvoerbaar is.
+
+7. Controleer daarna de lokale Ollama-installatie en of het ingestelde model
+   beschikbaar is. Gebruik een actuele Ollama-versie met JSON-schema-uitvoer.
+   Voor het ophalen van het gekozen model:
+
+   ollama pull qwen2.5:3b
+
+   Start zo nodig ollama serve; start geen tweede service als de desktop-app
+   hem al draait. Vraag toestemming volgens je lokale instellingen voordat je
+   software installeert of grote modelbestanden ophaalt. Verander geen firewall
+   of externe netwerkbindingen: de mod gebruikt loopback.
+
+8. Test een echt gesprek (/helper ask hoi, wat kun je?) en een echte opdracht
+   (/helper ask hak 16 boomstammen voor me). Controleer ook ontbrekend model,
+   Ollama uit, time-out, ongeldige taak, stop tijdens aanvraag en forget.
+   Stop/fout moet Minecraft bruikbaar laten; geen vastlopende serverthread.
+
+9. Als je geen grafische client kunt bedienen: voer beschikbare compile-/HTTP-/
+   servertests uit en geef de gebruiker de korte resterende handmatige stappen.
+   Doe niet alsof je Minecraft of het scherm hebt bediend als dat niet kan.
+
+10. Werk helpers/README.md bij met werkelijke resultaten en beperkingen.
+    Geef gewijzigde bestanden, testresultaten en exact JAR-pad. Publiceer geen
+    release, push geen commits en wijzig geen cloudomgeving zonder opdracht.
+
+AFRONDEN
+
+Klaar voor een eerste speeltest betekent: JAR werkelijk gebouwd, relevante tests
+geslaagd en duidelijk wat nog in Minecraft getest moet worden. Claim niet dat
+het hele NPC-systeem af is op basis van alleen de losse chatmodule. Bij een
+blokkade: meld de exacte fout en de kleinste noodzakelijke gebruikersactie.
