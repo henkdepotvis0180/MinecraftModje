@@ -2,7 +2,8 @@
 
 **Status:** de Java-kern (AI-taakvalidatie en bouwplan) is gecompileerd en getest.
 De volledige NeoForge-mod is **nog niet gecompileerd of in Minecraft getest**.
-De cloudproxy blokkeert downloads van Gradle/NeoForge. Er is daarom nog geen
+Gradle en een volledige JDK 21 zijn geïnstalleerd en geverifieerd, maar de
+netwerkregels blokkeren de officiële NeoForge-downloadserver. Er is daarom nog geen
 geverifieerde speelbare JAR. Dit is een broncodeprototype, geen datapack.
 
 ## Bouwen op Windows
@@ -32,7 +33,7 @@ ollama pull qwen2.5:3b
 
 Laat Ollama draaien; start zo nodig `ollama serve` wanneer de desktop-app de
 service niet al heeft gestart. De mod gebruikt uitsluitend
-`http://127.0.0.1:11434/api/generate`. Geen API-sleutel nodig.
+`http://127.0.0.1:11434/api/chat`. Geen API-sleutel nodig.
 Het model kan na de eerste start worden aangepast in
 `config/henkhelpers-common.toml` met `model="..."` en daarna een herstart.
 `enableLocalAi=false` schakelt modelrequests uit.
@@ -83,6 +84,16 @@ hut staat één blok verhoogd. De plaats moet vooraf vrij en bereikbaar zijn.
 Bestaande blokken worden niet weggegraven; bestaande eikenplanken tellen als al
 gebouwd. Geen vrijvormige gebouwen uit chat en nog geen blauwdruk-editor.
 
+## Praten met je hulpje
+
+`/helper ask hoi, wat kun jij voor mij doen?` geeft een gewoon antwoord.
+`/helper ask hak 16 boomstammen voor mij` kan daarnaast een begrensde houtkaptaak
+opleveren. Alleen `/helper ask` wordt naar het model gestuurd; gewone openbare
+Minecraft-chat wordt niet onderschept. De mod stuurt de huidige werkstatus mee.
+Gewone gespreksantwoorden starten geen taak. Het taalmodel kan nog steeds een
+opdracht verkeerd begrijpen; `/helper stop` blijft de directe stopknop.
+De volgende game-melding vertelt of een gekozen taak echt kan starten.
+
 ## Gedrag en beperkingen
 
 - Modeluitvoer accepteert alleen `chop` (1–64), `build`, `stop` en `status`.
@@ -91,7 +102,9 @@ gebouwd. Geen vrijvormige gebouwen uit chat en nog geen blauwdruk-editor.
 - `/helper stop` maakt een laat AI-antwoord ongeldig. Een taakwijziging doet hetzelfde.
 - Bij te grote afstand, offline eigenaar of 30 seconden zonder voortgang stopt de taak.
 - Eigenaar en spullen worden opgeslagen via entity-NBT; taken hervatten niet na herladen.
-- Geen conversatiegeheugen, kistenlogistiek, automatisch volgen, districtsbeheer of
+- Kort gespreksgeheugen: vier vraag/antwoordparen per hulpje, alleen in RAM.
+  `/helper forget` wist dit geheugen en maakt een nog onderweg zijnd antwoord ongeldig.
+  Geen kistenlogistiek, automatisch volgen, districtsbeheer of
   teamselectie. Dit is de eerste taakgestuurde werker.
 - Spawn-/bouwrechten en break/place-events worden gecontroleerd. Integratie met
   specifieke claimmods is niet getest; gebruik voorlopig een eigen testwereld.
@@ -102,6 +115,20 @@ gebouwd. Geen vrijvormige gebouwen uit chat en nog geen blauwdruk-editor.
 Offline uit de repositoryroot: `python3 tools/test_helpers_core.py`.
 Dit test echte Java-code, maar alleen de twee dependency-vrije kernklassen.
 `gradle build` voert ook deze kerntest uit via `coreTest`.
+
+De onafhankelijke chatmodule is gecompileerd en getest met Gson 2.10.1 en een
+lokale HTTP-testserver: gesprekken, begrensd geheugen, de echte HTTP-requestvorm,
+taakvertaling, ongeldige modelantwoorden, ontbrekend model (HTTP 404), onvolledige
+responses en time-outs. Dit test **geen echt Ollama-model** en geen Minecraft-NPC.
+Uit de root: `python3 tools/test_helpers_chat.py /pad/naar/gson-2.10.1.jar`.
+Gebruik bijvoorbeeld de Gson-JAR uit de libraries van je Minecraft-installatie.
+Gradle voert dezelfde test uit via `chatTest`.
+
+De volledige build wordt geblokkeerd door HTTP 403 naar `maven.neoforged.net`.
+Het omgevingsconcept bevat de benodigde domeinen `maven.neoforged.net`,
+`libraries.minecraft.net`, `piston-meta.mojang.com` en `piston-data.mojang.com`.
+Deze conceptwijziging is niet door de agent gepubliceerd. Na toepassen opnieuw bouwen;
+extra afhankelijkheden kunnen pas daarna definitief worden vastgesteld.
 
 Nog vereist: volledige compilatie, clientstart, NPC-rendering, padvinden, bijlslijtage,
 exacte materiaaloverdracht, blokkering van bezette bouwplaatsen, opslag/herladen,

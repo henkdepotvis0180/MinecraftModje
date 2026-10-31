@@ -22,3 +22,11 @@ tasks.register('coreTest', JavaExec) {
     mainClass = 'nl.henk.helpers.CoreTest'
 }
 tasks.named('check') { dependsOn tasks.named('coreTest') }
+
+tasks.register('chatTest', JavaExec) {
+    dependsOn testClasses
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'nl.henk.helpers.ChatTest'
+    jvmArgs '--add-modules', 'jdk.httpserver'
+}
+tasks.named('check') { dependsOn tasks.named('chatTest') }

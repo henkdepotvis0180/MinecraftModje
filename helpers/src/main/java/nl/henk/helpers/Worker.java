@@ -22,6 +22,7 @@ import java.util.UUID;
 
 public final class Worker extends Villager {
     private UUID owner;
+    public final ChatMemory chatMemory = new ChatMemory();
     private TaskPlan task;
     private BlockPos anchor;
     private BlockPos target;
@@ -36,6 +37,7 @@ public final class Worker extends Villager {
     public void setOwner(UUID id) { owner = id; }
     public boolean ownedBy(ServerPlayer player) { return player.getUUID().equals(owner); }
     public int generation() { return generation; }
+    public void forgetChat() { chatMemory.clear(); generation++; tell("Ons korte gespreksgeheugen is gewist."); }
     public String status() { return task == null ? "Ik wacht op werk." : task.action() + ": " + progress + " gedaan."; }
     private void tell(String text) {
         if (owner != null && level() instanceof ServerLevel server) {

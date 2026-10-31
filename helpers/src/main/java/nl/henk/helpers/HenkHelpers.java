@@ -96,6 +96,9 @@ public final class HenkHelpers {
                     var p = context.getSource().getPlayerOrException();
                     return safely(p, () -> p.sendSystemMessage(Component.literal(worker(p).status())));
                 }))
+                .then(Commands.literal("forget").executes(context -> {
+                    var p = context.getSource().getPlayerOrException(); return safely(p, () -> worker(p).forgetChat());
+                }))
                 .then(Commands.literal("ask").then(Commands.argument("message", StringArgumentType.greedyString()).executes(context -> {
                     var p = context.getSource().getPlayerOrException();
                     return safely(p, () -> ask(p, StringArgumentType.getString(context, "message")));
@@ -109,7 +112,7 @@ public final class HenkHelpers {
         var server = player.serverLevel().getServer();
         int generation = npc.generation();
         try {
-            Ollama.plan(message).whenComplete((plan, error) -> server.execute(() -> {
+            Ollama.chat(message, npc.status(), npc.chatMemory.snapshot()).whenComplete((reply, error) -> server.execute(() -> {
                 AI_BUSY.set(false);
                 if (server.getPlayerList().getPlayer(player.getUUID()) != player) return;
                 if (error != null) {
@@ -120,10 +123,11 @@ public final class HenkHelpers {
                         || npc.distanceToSqr(player) > 64 * 64 || generation != npc.generation()) {
                     player.sendSystemMessage(Component.literal("AI-antwoord vervallen: hulpje is verplaatst of de taak is veranderd.")); return;
                 }
-                player.sendSystemMessage(Component.literal("AI kiest: " + plan.action() + (plan.count() > 0 ? " " + plan.count() : "")));
-                npc.assign(plan, player);
+                npc.chatMemory.remember(message, reply.message());
+                player.sendSystemMessage(Component.literal("Henkhulp: " + reply.message()));
+                if (reply.task() != null) npc.assign(reply.task(), player);
             }));
-            player.sendSystemMessage(Component.literal("Ik vraag je lokale Ollama-model om een taak..."));
+            player.sendSystemMessage(Component.literal("Ik vraag je lokale Ollama-model om een antwoord..."));
         } catch (RuntimeException exception) {
             AI_BUSY.set(false); throw exception;
         }
