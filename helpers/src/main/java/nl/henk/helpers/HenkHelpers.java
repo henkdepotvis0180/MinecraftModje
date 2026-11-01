@@ -3,6 +3,7 @@ package nl.henk.helpers;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.UuidArgument;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
@@ -44,7 +45,7 @@ public final class HenkHelpers {
         NeoForge.EVENT_BUS.addListener(this::commands);
     }
     private void attributes(EntityAttributeCreationEvent event) {
-        event.put(WORKER.get(), Villager.createAttributes().build());
+        event.put(WORKER.get(), Villager.createAttributes().add(net.minecraft.world.entity.ai.attributes.Attributes.FOLLOW_RANGE, 64).build());
     }
     private static Worker worker(ServerPlayer player) {
         return player.serverLevel().getEntitiesOfClass(Worker.class, player.getBoundingBox().inflate(64),
@@ -58,8 +59,47 @@ public final class HenkHelpers {
             player.sendSystemMessage(Component.literal(exception.getMessage())); return 0;
         }
     }
+    private static Worker conversationWorker(ServerPlayer player, java.util.UUID id) {
+        var entity = player.serverLevel().getEntity(id);
+        if (!(entity instanceof Worker npc) || !npc.isAlive() || !npc.ownedBy(player)
+                || npc.distanceToSqr(player) > 8 * 8)
+            throw new IllegalArgumentException("Ga dichter bij je eigen Henkhulp staan om te praten.");
+        return npc;
+    }
     private void commands(RegisterCommandsEvent event) {
         var root = Commands.literal("helper")
+                .then(Commands.literal("follow").executes(context -> {
+                    var p = context.getSource().getPlayerOrException();
+                    return safely(p, () -> worker(p).setFollowing(p, true));
+                }))
+                .then(Commands.literal("stay").executes(context -> {
+                    var p = context.getSource().getPlayerOrException();
+                    return safely(p, () -> worker(p).setFollowing(p, false));
+                }))
+                .then(Commands.literal("talk").then(Commands.argument("worker", UuidArgument.uuid())
+                        .then(Commands.argument("message", StringArgumentType.greedyString()).executes(context -> {
+                            var p = context.getSource().getPlayerOrException();
+                            return safely(p, () -> ask(p, conversationWorker(p, UuidArgument.getUuid(context, "worker")),
+                                    StringArgumentType.getString(context, "message")));
+                        }))))
+                .then(Commands.literal("control").then(Commands.argument("worker", UuidArgument.uuid())
+                        .then(Commands.argument("action", StringArgumentType.word()).executes(context -> {
+                            var p = context.getSource().getPlayerOrException();
+                            return safely(p, () -> {
+                                var npc = conversationWorker(p, UuidArgument.getUuid(context, "worker"));
+                                switch (StringArgumentType.getString(context, "action")) {
+                                    case "stop" -> npc.stop("Ik stop.");
+                                    case "give" -> npc.receive(p);
+                                    case "collect" -> npc.collect(p);
+                                    case "forget" -> npc.forgetChat();
+                                    case "inventory" -> npc.openSupplies(p);
+                                    case "bind" -> npc.bindSupplies(p);
+                                    case "follow" -> npc.setFollowing(p, !npc.isFollowing());
+                                    case "gap" -> npc.cycleFollowGap(p);
+                                    default -> throw new IllegalArgumentException("Onbekende hulpje-actie.");
+                                }
+                            });
+                        }))))
                 .then(Commands.literal("spawn").requires(source -> source.hasPermission(2)).executes(context -> {
                     var player = context.getSource().getPlayerOrException();
                     var existing = player.serverLevel().getEntitiesOfClass(Worker.class, player.getBoundingBox().inflate(64), w -> w.ownedBy(player));
@@ -106,8 +146,13 @@ public final class HenkHelpers {
         event.getDispatcher().register(root);
     }
     private static void ask(ServerPlayer player, String message) {
+        ask(player, worker(player), message);
+    }
+    private static void ask(ServerPlayer player, Worker npc, String message) {
+        String direct = message.strip().toLowerCase(java.util.Locale.ROOT);
+        if (java.util.Set.of("volg mij", "volg me", "kom mee").contains(direct)) { npc.setFollowing(player, true); return; }
+        if (java.util.Set.of("blijf hier", "stop met volgen").contains(direct)) { npc.setFollowing(player, false); return; }
         if (!AI.get()) throw new IllegalArgumentException("Lokale AI staat uit in de serverconfiguratie.");
-        var npc = worker(player);
         if (!AI_BUSY.compareAndSet(false, true)) throw new IllegalArgumentException("Het lokale model is nog bezig. Probeer straks opnieuw.");
         var server = player.serverLevel().getServer();
         int generation = npc.generation();
@@ -119,7 +164,7 @@ public final class HenkHelpers {
                     player.sendSystemMessage(Component.literal("AI-opdracht mislukt. Controleer Ollama, modelnaam en /helper status. Handmatige opdrachten blijven werken."));
                     return;
                 }
-                if (!npc.isAlive() || npc.isRemoved() || npc.level() != player.level()
+                if (!npc.isAlive() || npc.isRemoved() || !npc.ownedBy(player) || npc.level() != player.level()
                         || npc.distanceToSqr(player) > 64 * 64 || generation != npc.generation()) {
                     player.sendSystemMessage(Component.literal("AI-antwoord vervallen: hulpje is verplaatst of de taak is veranderd.")); return;
                 }

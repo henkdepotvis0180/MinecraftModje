@@ -1,4 +1,5 @@
 $ErrorActionPreference = 'Stop'
+$ProgressPreference = 'SilentlyContinue'
 Push-Location $PSScriptRoot
 try {
     # Gradle stays local to the project. TLS and artifact checks remain enabled.
@@ -9,8 +10,13 @@ try {
         New-Item -ItemType Directory -Force $tools | Out-Null
         $zip = Join-Path $tools "gradle-$version-bin.zip"
         $url = "https://downloads.gradle.org/distributions/gradle-$version-bin.zip"
-        Invoke-WebRequest -Uri $url -OutFile $zip
-        $expected = ((Invoke-WebRequest -Uri "$url.sha256" -UseBasicParsing).Content).Trim()
+        Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
+        $checksumResponse = (Invoke-WebRequest -Uri "$url.sha256" -UseBasicParsing).Content
+        $expected = if ($checksumResponse -is [byte[]]) {
+            [System.Text.Encoding]::UTF8.GetString($checksumResponse).Trim()
+        } else {
+            ([string]$checksumResponse).Trim()
+        }
         $actual = (Get-FileHash $zip -Algorithm SHA256).Hash
         if ($actual -ine $expected) {
             Remove-Item $zip
@@ -21,7 +27,7 @@ try {
     }
     & $gradle --no-daemon build
     if ($LASTEXITCODE -ne 0) { throw 'De modbuild is mislukt; zie de foutmelding hierboven.' }
-    Write-Host 'Mod: helpers\build\libs\henk-helpers-0.1.0.jar' -ForegroundColor Green
+    Write-Host 'Mod: helpers\build\libs\henk-helpers-0.3.0.jar' -ForegroundColor Green
 } finally {
     Pop-Location
 }

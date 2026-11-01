@@ -3,8 +3,9 @@
 Een technologie- en automatiseringspack in wording voor **Minecraft Java 1.21.1 + NeoForge**.
 De eerste implementatie is eigen wereldgeneratie als datapack. Dit datapack gebruikt de
 Minecraft-registries en heeft zelf geen modloader of Java-mod nodig. Het volledige
-NeoForge-modpack, machines en NPC-mod zijn nog niet gebouwd; er zijn nog geen
-externe mods of specifieke NeoForge-build vastgezet.
+modpack en de machines zijn nog in ontwikkeling. De NPC-mod **Henk Helpers 0.3.0**
+is nu gebouwd voor **NeoForge 21.1.172**: echte voorraad, materiaal ophalen,
+houtkap, hutbouw en lokale Ollama-chat. Zie [installatie en tests](helpers/README.md).
 
 ## Eerste wereld: Henk Frontier
 

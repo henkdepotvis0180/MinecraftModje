@@ -1,137 +1,141 @@
-# Henk Helpers — prototype voor NeoForge 1.21.1
+# Henk Helpers 0.3.0
 
-**Status:** de Java-kern (AI-taakvalidatie en bouwplan) is gecompileerd en getest.
-De volledige NeoForge-mod is **nog niet gecompileerd of in Minecraft getest**.
-Gradle en een volledige JDK 21 zijn geïnstalleerd en geverifieerd, maar de
-netwerkregels blokkeren de officiële NeoForge-downloadserver. Er is daarom nog geen
-geverifieerde speelbare JAR. Dit is een broncodeprototype, geen datapack.
+Minecraft Java **1.21.1**, **NeoForge 21.1.172**, **Java 21**.
+Echte NPC-voorraad, gereedschap uitrusten, materiaal ophalen, houtkap, hutbouw en lokale AI-chat.
+De wereldgeneratie is niet aangepast.
 
-## Bouwen op Windows
+## Installeren
 
-1. Installeer een **JDK 21** (niet alleen een losse Java-runtime) en zorg dat
-   `JAVA_HOME` naar die JDK wijst.
-2. Open PowerShell in deze map en voer `./build-windows.ps1` uit.
-   Als je lokale beleid scripts blokkeert, kun je de Gradle-stappen hieronder
-   handmatig uitvoeren; verander geen algemeen systeembeleid voor dit project.
-3. Het script haalt Gradle 8.14.3 op via HTTPS, controleert de officiële SHA-256,
-   en voert `build` uit. Eerste build heeft internet nodig.
-4. Alleen na een succesvolle build: zet `build/libs/henk-helpers-0.1.0.jar` in
-   de map `mods` van een Minecraft **1.21.1 / NeoForge 21.1.172** testprofiel.
-   De mod moet op zowel client als server staan.
+Sluit Minecraft en vervang de oude mod door `build/libs/henk-helpers-0.3.0.jar`.
+Laat niet twee Henk Helpers-versies tegelijk in `mods` staan. Gebruik dezelfde versie
+op client en server. Test eerst in een aparte wereld.
 
-Met een bestaande Gradle 8.14.3-installatie kan ook `gradle build` in `helpers/`.
-`gradle runClient` start de ontwikkelclient. De versies zijn vastgezet maar konden
-hier nog niet tegen de externe repositories worden gevalideerd.
+Spawn met `/helper spawn` (operatorrechten). Rechtsklik daarna op je hulpje.
+Het paneel **Werk & voorraad** toont zijn echte status, bijl, plankvoorraad en kistkoppeling.
+Typ een vraag of opdracht en druk op Enter. Esc sluit het gesprek.
+Berichten aan het model worden niet als openbare spelerschat verstuurd.
 
-## Ollama lokaal
+## Volgen op verzoek
 
-Installeer Ollama via de officiële site `https://ollama.com` en haal een model op:
+Klik **Volg mij** om meelopen aan te zetten, **Blijf hier** om het uit te zetten.
+Ook `volg mij`, `volg me`, `kom mee`, `blijf hier` en `stop met volgen` in het
+hulpje-venster werken direct zonder Ollama. Commando's: `/helper follow`, `/helper stay`.
 
-```text
-ollama pull qwen2.5:3b
+**Afstand** wisselt tussen **4/2**, **6/3** en **10/4 blokken**: starten boven
+het eerste getal, stoppen binnen het tweede. Standaard begint hij boven vier
+blokken te lopen en stopt binnen twee. Nadat hij aankomt, blijft hij rustig
+staan zolang je binnen vier blokken blijft. Afstanden zijn driedimensionaal.
+
+Maximaal **64 blokken**, in dezelfde wereld en zolang de werker geladen blijft.
+Daarbuiten of bij een offline eigenaar wacht hij; kom terug binnen bereik.
+Hij loopt via padvinden en teleporteert niet. Na circa dertig seconden zonder
+beweging meldt hij een geblokkeerde route en blijft die opnieuw proberen.
+Hij kan niet vliegen, door muren lopen of automatisch portalen gebruiken.
+
+Volgen vervangt de huidige werkopdracht; een nieuwe hak-/bouwopdracht zet volgen
+uit. **Stop taak** stopt beide. Tijdens het bekijken van de rugzak wacht hij.
+Volgmodus en afstand blijven bij opslaan/herladen bewaard; standaard staat
+volgen uit. Dit vergroot de bomenzoekradius nog niet.
+
+Drie extra Minecraft-servertests slagen voor opt-in, werkelijk lopen, de 4/2-gap,
+blijven staan, afstandspresets, NBT, eigendom, bereik, offline eigenaar en hervatten
+na een geopende doorgang. Samen zijn alle **negen GameTests** geslaagd.
+Runlog: `helpers/build/game-tests-follow.log`. De nieuwe knoppen en layout zijn
+gecompileerd maar nog niet visueel in de client gecontroleerd.
+
+## Spullen en opdrachten
+
+**Rugzak openen** opent echte itemslots. Het eerste slot links is de uitgeruste bijl;
+de acht slots rechts zijn zijn opgeslagen rugzak. Sleep items vanuit je eigen inventaris
+of gebruik shift-klik. Een bijl in de rugzak wordt automatisch uitgerust voor houtkap.
+De standaard villager-renderer toont het werkelijk uitgeruste gereedschap.
+Tijdens het bekijken van zijn rugzak wacht deze werker; sluit het venster om door te werken.
+Voorraad en gereedschap blijven bewaard bij opslaan/herladen.
+
+**Koppel kist/vat** koppelt het dichtstbijzijnde geladen voorraadblok binnen acht blokken
+horizontaal en drie verticaal van de speler. Controleer de getoonde coördinaten als er
+meerdere kisten staan. Een dubbele kist levert alleen uit het gekoppelde blokdeel.
+Stop er een bijl en/of eikenplanken in.
+
+Geef bijvoorbeeld de opdracht **hak 16 boomstammen** of **bouw een hut**.
+Een opdracht blijft nu actief als materiaal ontbreekt. Hij zoekt eerst passende items
+op de grond binnen zestien blokken horizontaal en vier verticaal van zichzelf, daarna
+in de gekoppelde kist binnen 32 blokken. Hij loopt naar het materiaal, neemt echte items
+mee en hervat het werk. Items die voor een andere speler gereserveerd zijn laat hij liggen.
+
+Zonder benodigdheden wacht hij: vul zijn rugzak of kist, of leg een bijl/planken op de grond.
+Je hoeft de opdracht daarna niet opnieuw te geven. Een volle rugzak wordt gemeld.
+**Stop taak** stopt direct, ook tijdens materiaal ophalen of wachten.
+**Haal spullen op** geeft de echte voorraad terug voor zover je ruimte hebt; stop eerst de taak.
+**Wis gesprek** wist het korte modelgeheugen en maakt een lopend antwoord ongeldig.
+De zichtbare chatregels worden daarbij niet gewist.
+
+`/helper give` blijft beschikbaar. Met een bijl of eikenplanken in de hoofdhand verplaatst
+het die echt naar de NPC; zonder geschikt voorwerp opent het nu de rugzak. De melding
+vermeldt het werkelijk overgedragen aantal, ook bij een volle rugzak.
+
+## Grenzen
+
+- Houtkap: 1-64 logs binnen 16 blokken van het werkanker, twee blokken eronder tot vijf
+  erboven. Echte drops en bijlslijtage. Geplaatste logs tellen ook: werk weg van gebouwen.
+  Nog geen volledige hoge bomen vellen, herplanten of klimmen.
+- Hut: 5x5x5 schil met vloer, dak en open deuropening, 96 eikenplanken. Het anker begint
+  vier blokken voor de speler op voethoogte. De werker bouwt vanaf bereikbare posities
+  rondom het bouwwerk. Geen deuritem, inrichting of vrijvormige bouwplannen.
+- Bestaande blokken worden niet weggegraven. Een onbereikbaar doel stopt de taak na
+  ongeveer dertig seconden zonder voortgang. De eigenaar moet in dezelfde wereld
+  binnen 64 blokken blijven. Vensterbediening en rugzaktoegang vereisen eigendom en
+  maximaal acht blokken afstand.
+- De kist levert bestaande bijlen en planken; nog geen automatisch crafting of logs
+  tot planken verwerken, kistenroutes, afleveren of machines.
+- Taken hervatten niet na wereldherladen; voorraad en kistpositie blijven bewaard.
+- Henkhulp maakt geen villagergeluiden. Claimmod-integratie is niet geverifieerd.
+
+## Lokale AI
+
+Laat Ollama draaien met `qwen2.5:3b` (`ollama pull qwen2.5:3b`).
+De mod gebruikt `http://127.0.0.1:11434/api/chat`, zonder betaalde API of sleutel.
+Op een dedicated server moet Ollama op die servercomputer draaien.
+Wijzig het model in `config/henkhelpers-common.toml`; `enableLocalAi=false` schakelt AI uit.
+
+Alleen gesprekken via het hulpje of `/helper ask` gaan naar het model.
+Het krijgt echte werkstatus, bijl en plankvoorraad mee. Alleen begrensde chop/build/stop/status
+zijn toegestaan. Modeltekst wordt nooit als willekeurig servercommando uitgevoerd.
+De game valideert eigendom, afstand en materialen; het model kan zich vergissen.
+
+## Bouwen en testen
+
+Vanuit de projectroot:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\helpers\build-windows.ps1
 ```
 
-Laat Ollama draaien; start zo nodig `ollama serve` wanneer de desktop-app de
-service niet al heeft gestart. De mod gebruikt uitsluitend
-`http://127.0.0.1:11434/api/chat`. Geen API-sleutel nodig.
-Het model kan na de eerste start worden aangepast in
-`config/henkhelpers-common.toml` met `model="..."` en daarna een herstart.
-`enableLocalAi=false` schakelt modelrequests uit.
+Het script haalt Gradle 8.14.3 op, controleert de officiële SHA-256 en behoudt TLS-controle.
+Met de lokale Gradle vanuit `helpers`:
 
-In singleplayer is dit jouw computer. Bij een dedicated server moet Ollama op
-**de servercomputer** draaien, niet op de pc van de speler. Ollama is in deze
-cloudsessie niet geïnstalleerd of getest. Modeldownloads vragen schijfruimte;
-snelheid hangt van RAM/GPU af. De eerste aanvraag kan door modelinitialisatie traag zijn.
-
-## Eerste gebruik (na geslaagde build, nog te verifiëren)
-
-Test eerst in een aparte creatieve wereld, met cheats voor het spawnen:
-
-```text
-/helper spawn
+```powershell
+.\.tools\gradle-8.14.3\bin\gradle.bat build
+.\.tools\gradle-8.14.3\bin\gradle.bat liveChatTest
+.\.tools\gradle-8.14.3\bin\gradle.bat -PgameTests runGameTestServer
 ```
 
-Je krijgt een eigen werker met voorlopig het uiterlijk van een villager.
-Alle opdrachten kiezen je dichtstbijzijnde eigen hulpje binnen 64 blokken.
-Alleen het spawnen vereist operatorrechten. Gewone villager-handel is niet de
-bedoelde bediening; gebruik de opdrachten hieronder.
+`build` voert `coreTest` en `chatTest` uit. `liveChatTest` vereist echte lokale Ollama en het model.
+GameTests gebruiken een aparte testwereld en `src/gameTest`; deze klassen en structuur zitten
+niet in de mod-JAR.
 
-### Hout hakken
+Werkelijk geslaagd op 1 november 2026:
 
-1. Houd een bijl vast en typ `/helper give` (neemt de bijl uit je inventaris).
-2. Zet het hulpje bij bomen; typ `/helper chop 16`.
-3. Of via het model: `/helper ask hak 16 boomstammen voor mij`.
-4. Met `/helper status` vraag je voortgang op en met `/helper stop` stop je.
-5. Na afloop haal je met `/helper collect` zijn voorwerpen op.
+- Volledige modbuild, Java-kern- en HTTP-tests.
+- Echte Ollama-chat: gesprek, hak precies 16 logs, stoppen.
+- Zes tests in Minecraft/NeoForge: overdracht en save/load; shift-klik/gereedschapslot/volle
+  rugzak; wachten op een bijl in een kist en daarna hakken; naar een gevallen bijl lopen en
+  hakken; 96 planken uit een kist halen en een volledige hut bouwen; eigendom en stoppen.
+- Vier wereldgeneratietests; de eerdere ontwikkelclient laadde de mod zonder laadfout.
 
-Het hulpje zoekt logs in een werkgebied van 16 blokken rond zijn startpunt,
-van twee blokken eronder tot vijf erboven. Het moet daadwerkelijk naar de boom
-kunnen lopen en binnen bereik komen. De bijl slijt; volle opslag laat de rest als
-items vallen. Het plant nog geen saplings, klimt niet en kapt nog geen volledige
-hoge boom. Ook geplaatste houtblokken kunnen worden geselecteerd: gebruik een
-vrij boomgebied, weg van je gebouwen.
+De vernieuwde vensterindeling en zichtbare animatie zijn nog niet visueel gecontroleerd:
+Computer Use weigert het Java-venster. De servertests controleren echte blokken, materiaal,
+slijtage en taakresultaten, maar bewijzen niet elk terrein of alle multiplayer-situaties.
 
-### Bouwen
-
-1. Geef in totaal 96 eikenplanken met `/helper give` (meermaals indien nodig).
-2. Kijk naar een vrije bouwplaats en typ `/helper build hut`.
-3. Of: `/helper ask bouw een hut`.
-
-De bouwplaats begint vier blokken in je kijkrichting vanaf je blokpositie, op
-voethoogte. Het is een vaste 5×5×5 schil met vloer, dak en een deuropening;
-geen inrichting, deuritem of verlichting. De vloer ligt op voethoogte, dus de
-hut staat één blok verhoogd. De plaats moet vooraf vrij en bereikbaar zijn.
-Bestaande blokken worden niet weggegraven; bestaande eikenplanken tellen als al
-gebouwd. Geen vrijvormige gebouwen uit chat en nog geen blauwdruk-editor.
-
-## Praten met je hulpje
-
-`/helper ask hoi, wat kun jij voor mij doen?` geeft een gewoon antwoord.
-`/helper ask hak 16 boomstammen voor mij` kan daarnaast een begrensde houtkaptaak
-opleveren. Alleen `/helper ask` wordt naar het model gestuurd; gewone openbare
-Minecraft-chat wordt niet onderschept. De mod stuurt de huidige werkstatus mee.
-Gewone gespreksantwoorden starten geen taak. Het taalmodel kan nog steeds een
-opdracht verkeerd begrijpen; `/helper stop` blijft de directe stopknop.
-De volgende game-melding vertelt of een gekozen taak echt kan starten.
-
-## Gedrag en beperkingen
-
-- Modeluitvoer accepteert alleen `chop` (1–64), `build`, `stop` en `status`.
-  Geen servercommando's of willekeurige code uit AI-antwoorden.
-- Eén modelrequest tegelijk; timeout 90 seconden. Minecraft blijft asynchroon draaien.
-- `/helper stop` maakt een laat AI-antwoord ongeldig. Een taakwijziging doet hetzelfde.
-- Bij te grote afstand, offline eigenaar of 30 seconden zonder voortgang stopt de taak.
-- Eigenaar en spullen worden opgeslagen via entity-NBT; taken hervatten niet na herladen.
-- Kort gespreksgeheugen: vier vraag/antwoordparen per hulpje, alleen in RAM.
-  `/helper forget` wist dit geheugen en maakt een nog onderweg zijnd antwoord ongeldig.
-  Geen kistenlogistiek, automatisch volgen, districtsbeheer of
-  teamselectie. Dit is de eerste taakgestuurde werker.
-- Spawn-/bouwrechten en break/place-events worden gecontroleerd. Integratie met
-  specifieke claimmods is niet getest; gebruik voorlopig een eigen testwereld.
-- Houtkap en bouwen hebben een eenvoudige werksnelheid; balans volgt na speeltests.
-
-## Validatie
-
-Offline uit de repositoryroot: `python3 tools/test_helpers_core.py`.
-Dit test echte Java-code, maar alleen de twee dependency-vrije kernklassen.
-`gradle build` voert ook deze kerntest uit via `coreTest`.
-
-De onafhankelijke chatmodule is gecompileerd en getest met Gson 2.10.1 en een
-lokale HTTP-testserver: gesprekken, begrensd geheugen, de echte HTTP-requestvorm,
-taakvertaling, ongeldige modelantwoorden, ontbrekend model (HTTP 404), onvolledige
-responses en time-outs. Dit test **geen echt Ollama-model** en geen Minecraft-NPC.
-Uit de root: `python3 tools/test_helpers_chat.py /pad/naar/gson-2.10.1.jar`.
-Gebruik bijvoorbeeld de Gson-JAR uit de libraries van je Minecraft-installatie.
-Gradle voert dezelfde test uit via `chatTest`.
-
-De volledige build wordt geblokkeerd door HTTP 403 naar `maven.neoforged.net`.
-Het omgevingsconcept bevat de benodigde domeinen `maven.neoforged.net`,
-`libraries.minecraft.net`, `piston-meta.mojang.com` en `piston-data.mojang.com`.
-Deze conceptwijziging is niet door de agent gepubliceerd. Na toepassen opnieuw bouwen;
-extra afhankelijkheden kunnen pas daarna definitief worden vastgesteld.
-
-Nog vereist: volledige compilatie, clientstart, NPC-rendering, padvinden, bijlslijtage,
-exacte materiaaloverdracht, blokkering van bezette bouwplaatsen, opslag/herladen,
-Ollama-foutafhandeling, late antwoorden na stop, serverstart en twee spelers die
-elkaars hulpje niet kunnen bedienen. Test handmatig eerst zonder Ollama; daarna
-met `ollama serve` en het ingestelde model. Geen van deze runtimechecks is al geslaagd verklaard.
+Gedragsinspiratie: [MineColonies](https://minecolonies.com/wiki/systems/request/) en
+[NPC Logistics](https://github.com/DA-57EVE/NPC-Logistics/). Geen code uit die projecten overgenomen.
